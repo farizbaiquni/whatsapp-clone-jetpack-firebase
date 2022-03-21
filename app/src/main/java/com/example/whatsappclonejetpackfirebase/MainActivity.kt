@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.whatsappclonejetpackfirebase.presentations.signUp.SignUp
 import com.example.whatsappclonejetpackfirebase.ui.theme.WhatsappCloneJetpackFirebaseTheme
+import com.example.whatsappclonejetpackfirebase.utils.Navigations
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = {}
                 ) {
-                    SignUp()
+                    Navigations()
                 }// End scaffold
             }
         }// End setContent
