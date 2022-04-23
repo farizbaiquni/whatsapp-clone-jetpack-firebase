@@ -5,27 +5,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
 
 @Composable
 fun SignUp(
     signUpViewModel: SignUpViewModel,
+    navController: NavHostController,
 ){
     val prefixPhoneNumbers = signUpViewModel.prefixPhoneNumbers.value
     val postfixPhoneNumbers = signUpViewModel.postfixPhoneNumbers.value
-    val state = signUpViewModel.state.value
+    val screenState = signUpViewModel.screenState.value
     val otpCode = signUpViewModel.otpCode.value
     val otpCodeTimerLeft = signUpViewModel.otpCodeTimerLeft.value
     val verifyingProgress = signUpViewModel.verifyingProgress.value
+    val isVerificationSuccess = signUpViewModel.isVerificationSuccess.value
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 30.dp, horizontal = 5.dp),
+            .padding(vertical = 30.dp, horizontal = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
 
-        when(state){
+        when(screenState){
             is SignUpState.InputPhoneNumber -> {
                 SignUpInputPhoneNumbers(
                     postfixPhoneNumbers = postfixPhoneNumbers,
@@ -43,8 +47,17 @@ fun SignUp(
                     onChangeOTPCode = signUpViewModel::onChangeOTPCode,
                     otpCodeTimerLeft = otpCodeTimerLeft,
                     resendVerificationCode = signUpViewModel::resendVerificationCode,
-                    verifyingProgress = verifyingProgress
+                    verifyingProgress = verifyingProgress,
+                    verifyOTPCode = signUpViewModel::verifyOTPCode,
                 )
+            }
+        }
+
+        if(isVerificationSuccess){
+            navController.navigate(ScreenRoutes.AddProfile.route){
+                popUpTo(ScreenRoutes.AddProfile.route){
+                    inclusive = true
+                }
             }
         }
 

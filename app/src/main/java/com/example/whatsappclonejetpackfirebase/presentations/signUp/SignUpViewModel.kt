@@ -7,16 +7,13 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.whatsappclonejetpackfirebase.presentations.signUp.SignUpState
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.auth.ktx.userProfileChangeRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import java.util.concurrent.TimeUnit
 
 
@@ -30,8 +27,10 @@ class SignUpViewModel(activity: Activity): ViewModel() {
     val myForceResendingToken: MutableState<PhoneAuthProvider.ForceResendingToken?> = mutableStateOf(null)
     val myVerificationId: MutableState<String?> = mutableStateOf(null)
     val error: MutableState<Exception?> = mutableStateOf(null)
-    val state: MutableState<SignUpState> = mutableStateOf(SignUpState.InputPhoneNumber)
+    val screenState: MutableState<SignUpState> = mutableStateOf(SignUpState.InputPhoneNumber)
     val verifyingProgress = mutableStateOf(false)
+    val isVerificationSuccess = mutableStateOf(false)
+    private val db = Firebase.firestore
 
     fun startSignUpWithPhoneNumbers(){
 
@@ -50,7 +49,6 @@ class SignUpViewModel(activity: Activity): ViewModel() {
                     .build()
 
                 PhoneAuthProvider.verifyPhoneNumber(options)
-
             } catch (e: Exception){
                 Log.d("FAILED START", e.toString())
             }
@@ -60,22 +58,22 @@ class SignUpViewModel(activity: Activity): ViewModel() {
 
 
     fun verifyOTPCode(){
-        viewModelScope.launch {
-            try {
-                val credential = PhoneAuthProvider.getCredential(myVerificationId.value!!, otpCode.value)
-                signInWithPhoneNumber(credential)
-            } catch (e: Exception){ }
-        }
+        try {
+            val credential = PhoneAuthProvider.getCredential(myVerificationId.value!!, otpCode.value)
+            signInWithPhoneNumber(credential)
+        } catch (e: Exception){ }
     }
 
 
     fun startTimerOTPCode(){
-        object : CountDownTimer(65000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                otpCodeTimerLeft.value = millisUntilFinished / 1000
-            }
-            override fun onFinish() { }
-        }.start()
+        viewModelScope.launch {
+            object : CountDownTimer(65000, 1000) {
+                override fun onTick(millisUntilFinished: Long) {
+                    otpCodeTimerLeft.value = millisUntilFinished / 1000
+                }
+                override fun onFinish() { }
+            }.start()
+        }
     }
 
 
@@ -91,36 +89,48 @@ class SignUpViewModel(activity: Activity): ViewModel() {
                     Log.d("LOGIN ", "SUCCESS")
 
                     user?.let {
-                        updateAndAddUserData(user)
+                        addAndUpdateUserData(user)
                     }
                     verifyingProgress.value = false
                 } else {
-                    // Sign in failed, display a message and update the UI=
-                    if (task.exception is FirebaseAuthInvalidCredentialsException) {
-                        Log.d("LOGIN ", "FAILED " + task.exception)
-                    }
+                    // Sign in failed, display a message and update the UI
                     verifyingProgress.value = false
+                    this.screenState.value = SignUpState.InputPhoneNumber
                 }
         }
     } // End signInWithPhoneNumber
 
 
-    fun updateAndAddUserData(user: FirebaseUser){
+    fun addAndUpdateUserData(user: FirebaseUser){
+        val sfDocRef = db.collection("users").document(user.uid)
 
-        user!!.updateEmail("0" + postfixPhoneNumbers.value)
-            .addOnCompleteListener { task -> {} }
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(sfDocRef)
 
-        val data = hashMapOf(
-            "idUser" to user.uid,
-            "phoneNumber" to "0" + postfixPhoneNumbers.value,
-            "photoUrl" to null,
-            "username" to null,
-            "about" to "USA",
-        )
-        Firebase.firestore.collection("users").document(user.uid)
-            .set(data)
-            .addOnSuccessListener {  }
-            .addOnFailureListener {  }
+            // Update user auth profile
+            user.updateEmail("0" + postfixPhoneNumbers.value)
+
+            // Add data user
+            if(!snapshot.exists()){
+                Log.d("UPDATING DATA", "addAndUpdateUserData: ")
+                val data = hashMapOf(
+                    "idUser" to user.uid,
+                    "phoneNumber" to "0" + postfixPhoneNumbers.value,
+                    "photoUrl" to null,
+                    "username" to null,
+                    "about" to "Hi there! I am using whatsapp",
+                )
+                transaction.set(sfDocRef, data)
+            }
+            // Success
+            null
+        }.addOnSuccessListener {
+            onChangeIsVerificationSuccess(true)
+        }.addOnFailureListener {
+            Log.d("FAILED UPDATING DATA", it.toString())
+            Firebase.auth.signOut()
+            this.screenState.value = SignUpState.InputPhoneNumber
+        }
 
     }// End addUserData
 
@@ -156,6 +166,9 @@ class SignUpViewModel(activity: Activity): ViewModel() {
         this.otpCode.value = data
     }
 
+    fun onChangeIsVerificationSuccess(data: Boolean){
+        this.isVerificationSuccess.value = data
+    }
 
     val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
 
@@ -167,6 +180,7 @@ class SignUpViewModel(activity: Activity): ViewModel() {
             // 2 - Auto-retrieval. On some devices Google Play services can automatically
             //     detect the incoming verification SMS and perform verification without
             //     user action.
+            verifyingProgress.value = true
             signInWithPhoneNumber(credential = credential)
         }
 
@@ -177,13 +191,14 @@ class SignUpViewModel(activity: Activity): ViewModel() {
             if (e is FirebaseAuthInvalidCredentialsException) {
                 // Invalid request
                 error.value = e
-                Log.d("FAILED OUTSIDE A", e.toString())
+                Log.d("FAILED INVALID REQUEST", e.toString())
             } else if (e is FirebaseTooManyRequestsException) {
                 // The SMS quota for the project has been exceeded
                 error.value = e
-                Log.d("FAILED OUTSIDE B", e.toString())
+                Log.d("FAILED QOUTA EXCEEDED", e.toString())
             }
 
+            Log.d("VERIFICATION FAILED", e.toString())
             verifyingProgress.value = false
 
             // Show a message and update the UI
@@ -198,14 +213,13 @@ class SignUpViewModel(activity: Activity): ViewModel() {
             // by combining the code with a verification ID.
             // Log.d(TAG, "onCodeSent:$verificationId")
 
-            state.value = SignUpState.InputOTPCode
+            screenState.value = SignUpState.InputOTPCode
             startTimerOTPCode()
 
             // Save verification ID and resending token so we can use them later
             myVerificationId.value = verificationId
             myForceResendingToken.value = forceResendingToken
-            verifyingProgress.value = true
-            Log.d("OTP SENDED", "verificationId: " + verificationId)
+            Log.d("OTP SENT", "verificationId: " + verificationId)
         }
     } // End callback
 

@@ -1,11 +1,14 @@
 package com.example.whatsappclonejetpackfirebase.di
 
+import android.app.Activity
 import android.content.Context
+import androidx.navigation.Navigation
 import com.example.whatsappclonejetpackfirebase.domain.ContactRepository
 import com.example.whatsappclonejetpackfirebase.utils.PermissionHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -25,6 +28,5 @@ object DomainModule {
     fun providePermissionHelper(): PermissionHelper {
         return PermissionHelper()
     }
-
 
 }

@@ -22,7 +22,7 @@ fun Navigations(signUpViewModel: SignUpViewModel){
         composable(
             route = ScreenRoutes.SignUpScreen.route
         ){
-            SignUp(signUpViewModel)
+            SignUp(signUpViewModel, navController)
         }
         composable(
             route = ScreenRoutes.MainScreen.route
@@ -37,7 +37,7 @@ fun Navigations(signUpViewModel: SignUpViewModel){
         composable(
             route = ScreenRoutes.AddProfile.route
         ){
-            AddProfile()
+            AddProfile(navController = navController)
         }
     }
 }
