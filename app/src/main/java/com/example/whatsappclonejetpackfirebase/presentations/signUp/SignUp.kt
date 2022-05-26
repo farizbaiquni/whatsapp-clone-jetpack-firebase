@@ -19,7 +19,6 @@ fun SignUp(
     val otpCode = signUpViewModel.otpCode.value
     val otpCodeTimerLeft = signUpViewModel.otpCodeTimerLeft.value
     val verifyingProgress = signUpViewModel.verifyingProgress.value
-    val isVerificationSuccess = signUpViewModel.isVerificationSuccess.value
 
     Column(
         modifier = Modifier
@@ -51,14 +50,23 @@ fun SignUp(
                     verifyOTPCode = signUpViewModel::verifyOTPCode,
                 )
             }
-        }
 
-        if(isVerificationSuccess){
-            navController.navigate(ScreenRoutes.AddProfile.route){
-                popUpTo(ScreenRoutes.AddProfile.route){
-                    inclusive = true
+            is SignUpState.ToAddProfileScreen -> {
+                navController.navigate(ScreenRoutes.AddProfile.route){
+                    popUpTo(ScreenRoutes.AddProfile.route){
+                        inclusive = true
+                    }
                 }
             }
+
+            is SignUpState.ToMainScreen -> {
+                navController.navigate(ScreenRoutes.MainScreen.route){
+                    popUpTo(ScreenRoutes.MainScreen.route){
+                        inclusive = true
+                    }
+                }
+            }
+
         }
 
     }

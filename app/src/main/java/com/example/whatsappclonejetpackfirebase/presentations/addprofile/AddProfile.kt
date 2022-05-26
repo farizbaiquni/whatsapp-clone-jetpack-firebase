@@ -57,7 +57,6 @@ fun AddProfile(navController: NavHostController){
                         }
                     }
                 }
-
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

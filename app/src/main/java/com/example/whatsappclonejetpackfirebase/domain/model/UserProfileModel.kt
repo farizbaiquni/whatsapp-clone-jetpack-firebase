@@ -1,6 +1,6 @@
 package com.example.whatsappclonejetpackfirebase.domain.model
 
-data class UserModel(
+data class UserProfileModel(
     val idUser: String,
     val phoneNumbers: String,
     val photoUrl: String?,

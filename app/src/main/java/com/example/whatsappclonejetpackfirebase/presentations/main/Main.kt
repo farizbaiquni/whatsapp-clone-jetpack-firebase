@@ -26,7 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.whatsappclonejetpackfirebase.R
-import com.example.whatsappclonejetpackfirebase.domain.model.UserModel
+import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
 import com.example.whatsappclonejetpackfirebase.presentations.utils.AppViewModel
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
 import com.google.accompanist.pager.*
@@ -46,7 +46,7 @@ fun Main(navController: NavController, appViewModel: AppViewModel){
     val mainViewModel: MainViewModel =  hiltViewModel()
     val tabIndex = mainViewModel.tabIndex.value
 
-    val user: UserModel? = appViewModel.user.value
+    val userProfile: UserProfileModel? = appViewModel.userProfile.value
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val displayContactsPermissionAlert = remember { mutableStateOf(false) }

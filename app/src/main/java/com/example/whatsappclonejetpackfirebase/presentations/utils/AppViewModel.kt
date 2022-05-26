@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.whatsappclonejetpackfirebase.domain.ContactRepository
 import com.example.whatsappclonejetpackfirebase.domain.model.ContactModel
-import com.example.whatsappclonejetpackfirebase.domain.model.UserModel
+import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -22,7 +22,7 @@ class AppViewModel @Inject constructor(
     val db = Firebase.firestore
     private var userRef: DocumentReference? = null
 
-    val user: MutableState<UserModel?> = mutableStateOf(null)
+    val userProfile: MutableState<UserProfileModel?> = mutableStateOf(null)
     val contacts: MutableState<ArrayList<ContactModel>> = mutableStateOf(arrayListOf())
 
     fun queryContacts(){
@@ -41,7 +41,7 @@ class AppViewModel @Inject constructor(
                     }
 
                     if (snapshot != null && snapshot.exists()) {
-                        user.value = UserModel(
+                        userProfile.value = UserProfileModel(
                             idUser = snapshot.data?.getValue("idUser").toString(),
                             phoneNumbers = snapshot.data?.getValue("phoneNumbers").toString(),
                             photoUrl = snapshot.data?.getValue("photoUrl").toString(),
@@ -49,7 +49,7 @@ class AppViewModel @Inject constructor(
                             about = snapshot.data?.getValue("about").toString(),
                         )
                     } else {
-                        user.value = null
+                        userProfile.value = null
                     }
                 }
             }

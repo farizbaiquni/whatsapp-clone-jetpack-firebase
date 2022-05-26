@@ -69,7 +69,7 @@ fun SignUpInputPhoneNumbers(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth(0.25f)
+                    .fillMaxWidth(0.27f)
                     .drawBehind {
                         val strokeWidth = 1 * density
                         val y = size.height - strokeWidth / 1
@@ -106,8 +106,8 @@ fun SignUpInputPhoneNumbers(
 
                         drawLine(
                             Color(0xFF128c7e),
-                            Offset(0f + 30f, y + 10f),
-                            Offset(size.width + 30f, y + 10f),
+                            Offset(0f + 10f, y + 10f),
+                            Offset(size.width + 10f, y + 10f),
                             strokeWidth
                         )
                     },

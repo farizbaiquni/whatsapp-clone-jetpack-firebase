@@ -199,7 +199,7 @@ fun SignUpOTP(
 
         }
         Button(
-            onClick = { /*TODO*/ },
+            onClick = { verifyOTPCode() },
             colors = ButtonDefaults.buttonColors(backgroundColor = colorResource(R.color.green_500)),
             shape = RoundedCornerShape(3.dp),
             modifier = Modifier.clickable {
