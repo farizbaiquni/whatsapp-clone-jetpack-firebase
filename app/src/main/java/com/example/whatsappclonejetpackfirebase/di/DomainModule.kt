@@ -1,8 +1,10 @@
 package com.example.whatsappclonejetpackfirebase.di
 
 import android.content.Context
-import com.example.whatsappclonejetpackfirebase.domain.ContactRepository
+import com.example.whatsappclonejetpackfirebase.domain.repository.ContactRepository
 import com.example.whatsappclonejetpackfirebase.utils.PermissionHelper
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -33,6 +35,12 @@ object DomainModule {
     @Provides
     fun provideFirestore(): FirebaseFirestore{
         return Firebase.firestore
+    }
+
+    @Singleton
+    @Provides
+    fun provideAuth(): FirebaseAuth{
+        return Firebase.auth
     }
 
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -26,23 +27,26 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.example.whatsappclonejetpackfirebase.R
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AddProfile(navController: NavHostController){
-
+fun AddProfile(
+    navController: NavHostController,
+){
     val addProfileViewModel: AddProfileViewModel = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val auth = Firebase.auth
 
+    val authUser = remember { mutableStateOf<FirebaseUser?>(null) }
     val username = addProfileViewModel.username.value
     var isCameraSelected = addProfileViewModel.isCameraSelected.value
-    var imageUri = addProfileViewModel.imageUri.value
-    var imageBitmap = addProfileViewModel.imageBitmap.value
+    var cameraImageBitmap = addProfileViewModel.cameraImageBitmap.value
+    var galleryImageUri = addProfileViewModel.galleryImageUri.value
     var bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     var lifecycleOwner = LocalLifecycleOwner.current
 
@@ -50,12 +54,14 @@ fun AddProfile(navController: NavHostController){
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
                 val currentUser = auth.currentUser
-                if(currentUser == null){
+                if (currentUser == null){
                     navController.navigate(ScreenRoutes.SignUpScreen.route){
-                        popUpTo(ScreenRoutes.SignUpScreen.route){
+                        popUpTo(ScreenRoutes.AddProfileScreen.route){
                             inclusive = true
                         }
                     }
+                } else {
+                    authUser.value = currentUser
                 }
             }
         }
@@ -64,46 +70,40 @@ fun AddProfile(navController: NavHostController){
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 50.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
 
-        if(imageUri == null && imageBitmap == null){
-            Image(
-                painter = painterResource(id = R.drawable.ic_baseline_add_a_photo_24),
-                contentDescription = "add photo",
-                modifier = Modifier
-                    .size(85.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray.copy(alpha = 0.3f))
-                    .padding(20.dp)
-                    .clickable {
-                        coroutineScope.launch {
-                            bottomSheetState.show()
+            if(galleryImageUri == null && cameraImageBitmap == null){
+                Image(
+                    painter = painterResource(id = R.drawable.ic_baseline_add_a_photo_24),
+                    contentDescription = "add photo",
+                    modifier = Modifier
+                        .size(85.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray.copy(alpha = 0.3f))
+                        .padding(20.dp)
+                        .clickable {
+                            coroutineScope.launch {
+                                bottomSheetState.show()
+                            }
                         }
-                    }
-            )
-        }
+                )
+            }
 
-        imageUri?.let {
-            if(!isCameraSelected){
-
-                var tempBitmap = if(Build.VERSION.SDK_INT < 28){
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, it)
-                    ImageDecoder.decodeBitmap(source)
-                }
-
-                tempBitmap?.let {
-                    addProfileViewModel.onChangeImageUriToBitmap(tempBitmap)
+            galleryImageUri?.let {
+                if(!isCameraSelected){
                     Image(
                         bitmap = it.asImageBitmap(),
                         contentDescription = "Photo Profile",
+                        contentScale = ContentScale.FillBounds,
                         modifier = Modifier
                             .size(85.dp)
                             .clip(CircleShape)
@@ -117,67 +117,67 @@ fun AddProfile(navController: NavHostController){
                 }
             }
 
-        }
-
-        imageBitmap?.let {
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "Photo Profile",
-                modifier = Modifier
-                    .size(85.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray.copy(alpha = 0.3f))
-                    .clickable {
-                        coroutineScope.launch {
-                            bottomSheetState.show()
+            cameraImageBitmap?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentScale = ContentScale.FillBounds,
+                    contentDescription = "Photo Profile",
+                    modifier = Modifier
+                        .size(85.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray.copy(alpha = 0.3f))
+                        .clickable {
+                            coroutineScope.launch {
+                                bottomSheetState.show()
+                            }
                         }
-                    }
-            )
-        }
+                )
+            }
 
-        TextField(
-            value = username,
-            onValueChange = {addProfileViewModel.onChangeUsername(it)},
-            maxLines = 1,
-            colors = TextFieldDefaults.textFieldColors(
-                focusedIndicatorColor = MaterialTheme.colors.primary,
-                disabledIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.LightGray,
-                backgroundColor = Color.Transparent,
-            ),
-            placeholder = { Text(text = "Type your name here")},
-            modifier = Modifier.padding(top = 25.dp)
-        )
-        
-        Button(
-            onClick = {
-                if((imageBitmap != null || imageUri != null) && username.isNotEmpty()){
-                    Toast.makeText(context, "CLICKED", Toast.LENGTH_SHORT).show()
-                    var user = auth.currentUser
-                    user?.let {
-                        Toast.makeText(context, "CLICKED 2", Toast.LENGTH_SHORT).show()
-                        addProfileViewModel.uploadImage(user.uid, context)
+            TextField(
+                value = username,
+                onValueChange = {addProfileViewModel.onChangeUsername(it)},
+                maxLines = 1,
+                colors = TextFieldDefaults.textFieldColors(
+                    focusedIndicatorColor = MaterialTheme.colors.primary,
+                    disabledIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.LightGray,
+                    backgroundColor = Color.Transparent,
+                ),
+                placeholder = { Text(text = "Type your name here")},
+                modifier = Modifier.padding(top = 25.dp)
+            )
+
+            Button(
+                onClick = {
+                    if(
+                        (cameraImageBitmap != null || galleryImageUri != null) &&
+                        username.isNotEmpty() && authUser != null
+                    ){
+                        addProfileViewModel.uploadImage(authUser.value?.uid, context)
                     }
-                }
-            },
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = MaterialTheme.colors.primary
-            ),
-            modifier = Modifier.padding(top = 25.dp)
-        ) {
-            Text(text = "NEXT", color = Color.White)
-        }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.primary
+                ),
+                modifier = Modifier.padding(top = 25.dp)
+            ) {
+                Text(text = "NEXT", color = Color.White)
+            }
+        } // End Column
 
         BottomSheetPhotoProfileOption(
             context = context,
             modalBottomSheetState = bottomSheetState,
             isCameraSelected = isCameraSelected,
-            onImageBitmapChange = addProfileViewModel::onChangeImageBitmap,
+            onChangeCameraImageBitmap = addProfileViewModel::onChangeCameraImageBitmap,
             onIsSelectedCameraChange = addProfileViewModel::onChangeIsCameraSelected,
-            onUriChange = addProfileViewModel::onChangeImageUri,
+            onChangeGalleryImageUri = addProfileViewModel::onChangeGalleryImageUri,
         )
+    } // End Box
 
-    }
 }
+
+
 
 

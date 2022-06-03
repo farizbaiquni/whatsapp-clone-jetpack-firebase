@@ -52,8 +52,8 @@ fun SignUp(
             }
 
             is SignUpState.ToAddProfileScreen -> {
-                navController.navigate(ScreenRoutes.AddProfile.route){
-                    popUpTo(ScreenRoutes.AddProfile.route){
+                navController.navigate(ScreenRoutes.AddProfileScreen.route){
+                    popUpTo(ScreenRoutes.SignUpScreen.route){
                         inclusive = true
                     }
                 }
@@ -61,7 +61,7 @@ fun SignUp(
 
             is SignUpState.ToMainScreen -> {
                 navController.navigate(ScreenRoutes.MainScreen.route){
-                    popUpTo(ScreenRoutes.MainScreen.route){
+                    popUpTo(ScreenRoutes.SignUpScreen.route){
                         inclusive = true
                     }
                 }

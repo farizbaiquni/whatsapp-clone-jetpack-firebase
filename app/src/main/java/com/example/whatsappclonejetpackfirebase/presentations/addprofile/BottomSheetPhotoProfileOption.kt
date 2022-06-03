@@ -4,7 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
@@ -35,29 +38,38 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BottomSheetPhotoProfileOption(
-    isCameraSelected: Boolean,
-    onUriChange: (Uri?) -> Unit,
-    onImageBitmapChange: (Bitmap?) -> Unit,
-    modalBottomSheetState: ModalBottomSheetState,
-    onIsSelectedCameraChange: (Boolean) -> Unit,
     context: Context,
+    modalBottomSheetState: ModalBottomSheetState,
+    isCameraSelected: Boolean,
+    onIsSelectedCameraChange: (Boolean) -> Unit,
+    onChangeGalleryImageUri: (Bitmap?) -> Unit,
+    onChangeCameraImageBitmap: (Bitmap?) -> Unit,
 ){
     val coroutineScope = rememberCoroutineScope()
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ){
-            uri: Uri? ->
-        onImageBitmapChange(null)
-        onUriChange(uri)
+        uri: Uri? -> run {
+            if(uri != null) {
+                var tempBitmap = if (Build.VERSION.SDK_INT < 28){
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                } else {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                }
+                onChangeCameraImageBitmap(null)
+                onChangeGalleryImageUri(tempBitmap)
+            }
+        }
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ){
-            bitmap: Bitmap? ->
-        onUriChange(null)
-        onImageBitmapChange(bitmap)
+        bitmap: Bitmap? ->
+            onChangeGalleryImageUri(null)
+            onChangeCameraImageBitmap(bitmap)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -76,27 +88,34 @@ fun BottomSheetPhotoProfileOption(
     }
 
     ModalBottomSheetLayout(
+        modifier = Modifier.fillMaxSize(),
         sheetContent = {
             Column(
                 modifier = Modifier
-                    .padding(15.dp)
-                    .height(190.dp)
+                    .padding( top = 25.dp, start = 20.dp)
             ) {
+
                 Text(
                     text = "Profile Photo",
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(top = 10.dp, bottom = 25.dp)
+                    fontSize = 17.sp,
                 )
 
-                Row(Modifier.padding(horizontal = 10.dp)){
+                Row(
+                    Modifier.padding(vertical = 20.dp)
+                ){
 
                     //First Option
-                    Column(Modifier.padding(end = 35.dp), verticalArrangement = Arrangement.Center) {
-
-                        //Image container
+                    Column(
+                        Modifier.padding(end = 35.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        //Image
                         Column(
-                            Modifier.size(60.dp).clip(CircleShape).border(1.dp, Color.LightGray.copy(0.5f), CircleShape),
+                            Modifier
+                                .size(60.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color.LightGray.copy(0.5f), CircleShape),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -108,17 +127,21 @@ fun BottomSheetPhotoProfileOption(
                                     .clip(CircleShape)
                                     .background(Color.LightGray.copy(0.5f))
                                     .clickable {
-                                        when(PackageManager.PERMISSION_GRANTED){
-                                            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
+                                        when (PackageManager.PERMISSION_GRANTED) {
+                                            ContextCompat.checkSelfPermission(
+                                                context,
+                                                Manifest.permission.CAMERA
+                                            ) -> {
                                                 cameraLauncher.launch()
                                                 coroutineScope.launch {
                                                     modalBottomSheetState.hide()
                                                 }
-                                            } else -> {
-                                            onIsSelectedCameraChange(true)
-                                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                                            }
+                                            else -> {
+                                                onIsSelectedCameraChange(true)
+                                                permissionLauncher.launch(Manifest.permission.CAMERA)
 
-                                        }
+                                            }
                                         }
                                     }
                             )
@@ -128,10 +151,12 @@ fun BottomSheetPhotoProfileOption(
 
                     //Second Option
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
                         //Image container
                         Column(
-                            Modifier.size(60.dp).clip(CircleShape).border(1.dp, Color.LightGray.copy(0.5f), CircleShape),
+                            Modifier
+                                .size(60.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, Color.LightGray.copy(0.5f), CircleShape),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ){
@@ -164,9 +189,9 @@ fun BottomSheetPhotoProfileOption(
                         }
                         Text(text = "Gallery", fontSize = 15.sp, modifier = Modifier.padding(top = 7.dp))
                     }
-                }
-            }
-        },
+                }//End Row
+            }// End Column
+        }, //End SheetContent
         sheetState = modalBottomSheetState
     ){}
 }

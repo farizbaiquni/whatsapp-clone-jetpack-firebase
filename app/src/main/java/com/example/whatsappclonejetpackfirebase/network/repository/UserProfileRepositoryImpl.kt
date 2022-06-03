@@ -1,12 +1,13 @@
-package com.example.whatsappclonejetpackfirebase.domain.repositories
+package com.example.whatsappclonejetpackfirebase.network.repository
 
 import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
+import com.example.whatsappclonejetpackfirebase.domain.repository.UserProfileRepository
 import com.google.firebase.firestore.FirebaseFirestore
 
 class UserProfileRepositoryImpl(
     private val db: FirebaseFirestore,
-): UserProfileRepository{
-    override fun getUserProfile(id: String): UserProfileModel? {
+): UserProfileRepository {
+    override suspend fun getUserProfile(id: String): UserProfileModel? {
         var user: UserProfileModel? = null
         val docRef = db.collection("userProfile").document(id)
         docRef.get()

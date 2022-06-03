@@ -1,4 +1,4 @@
-package com.example.whatsappclonejetpackfirebase.domain
+package com.example.whatsappclonejetpackfirebase.domain.repository
 
 import android.annotation.SuppressLint
 import android.content.Context

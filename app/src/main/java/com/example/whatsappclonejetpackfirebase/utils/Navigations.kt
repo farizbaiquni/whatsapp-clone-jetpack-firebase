@@ -1,13 +1,13 @@
 package com.example.whatsappclonejetpackfirebase.utils
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
-import com.example.whatsappclonejetpackfirebase.domain.repositories.UserProfileRepository
+import com.example.whatsappclonejetpackfirebase.domain.repository.UserProfileRepository
+import com.example.whatsappclonejetpackfirebase.presentations.Splash
 import com.example.whatsappclonejetpackfirebase.presentations.addprofile.AddProfile
 import com.example.whatsappclonejetpackfirebase.presentations.contact.Contacts
 import com.example.whatsappclonejetpackfirebase.presentations.main.Main
@@ -16,53 +16,49 @@ import com.example.whatsappclonejetpackfirebase.presentations.signUp.SignUpViewM
 import com.example.whatsappclonejetpackfirebase.presentations.utils.AppViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.runBlocking
 
 @ExperimentalPermissionsApi
 @Composable
-fun Navigations(
+fun Navigations (
     signUpViewModel: SignUpViewModel,
-    currentUser: FirebaseUser?,
-    userProfileRepository: UserProfileRepository,
 ){
     val navController = rememberNavController()
     val appViewModel: AppViewModel = hiltViewModel()
-    var initialRoute: String = ScreenRoutes.SignUpScreen.route
 
-    if (currentUser !== null){
-        val userProfile: UserProfileModel? = userProfileRepository.getUserProfile(currentUser.uid)
-        if (userProfile !== null){
-            if (userProfile.username !== null){
-                initialRoute = ScreenRoutes.AddProfile.route
-            } else {
-                initialRoute = ScreenRoutes.MainScreen.route
-            }
-        } else {
-            initialRoute = ScreenRoutes.AddProfile.route
+    val userProfile = appViewModel.userProfile.value
+
+    NavHost(navController = navController, startDestination = ScreenRoutes.SplashScreen.route){
+
+        composable(
+            route = ScreenRoutes.SplashScreen.route
+        ){
+            Splash(navController = navController)
         }
-    }
 
-
-    NavHost(navController = navController, startDestination = initialRoute){
         composable(
             route = ScreenRoutes.SignUpScreen.route
         ){
             SignUp(signUpViewModel, navController)
         }
+
+        composable(
+            route = ScreenRoutes.AddProfileScreen.route
+        ){
+            AddProfile(navController = navController)
+        }
+
         composable(
             route = ScreenRoutes.MainScreen.route
         ){
             Main(navController, appViewModel)
         }
+
         composable(
             route = ScreenRoutes.ContactsScreen.route
         ){
             Contacts(navController, appViewModel)
         }
-        composable(
-            route = ScreenRoutes.AddProfile.route
-        ){
-            AddProfile(navController = navController)
-        }
+
     }
 }

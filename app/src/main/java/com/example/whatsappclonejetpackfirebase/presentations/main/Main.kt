@@ -65,34 +65,34 @@ fun Main(navController: NavController, appViewModel: AppViewModel){
         )
     )
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) {
-
-                val currentUser = auth.currentUser
-                if(currentUser != null){
-                    //Create user doc listener
-                    appViewModel.userListener(currentUser.uid)
-
-                    //Query contacts phone data
-                    if(contactPermissionsState.allPermissionsGranted){
-                        appViewModel.queryContacts()
-                    }
-                }else{
-                    navController.navigate(ScreenRoutes.SignUpScreen.route){
-                        popUpTo(ScreenRoutes.SignUpScreen.route){
-                            inclusive = true
-                        }
-                    }
-                }
-
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+//    DisposableEffect(lifecycleOwner) {
+//        val observer = LifecycleEventObserver { _, event ->
+//            if (event == Lifecycle.Event.ON_START) {
+//
+//                val currentUser = auth.currentUser
+//                if(currentUser != null){
+//                    //Create user doc listener
+//                    appViewModel.userListener(currentUser.uid)
+//
+//                    //Query contacts phone data
+//                    if(contactPermissionsState.allPermissionsGranted){
+//                        appViewModel.queryContacts()
+//                    }
+//                }else{
+//                    navController.navigate(ScreenRoutes.SignUpScreen.route){
+//                        popUpTo(ScreenRoutes.SignUpScreen.route){
+//                            inclusive = true
+//                        }
+//                    }
+//                }
+//
+//            }
+//        }
+//        lifecycleOwner.lifecycle.addObserver(observer)
+//        onDispose {
+//            lifecycleOwner.lifecycle.removeObserver(observer)
+//        }
+//    }
 
 
     Scaffold(
