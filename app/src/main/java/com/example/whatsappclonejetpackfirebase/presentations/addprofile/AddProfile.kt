@@ -1,14 +1,13 @@
 package com.example.whatsappclonejetpackfirebase.presentations.addprofile
 
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.provider.MediaStore
+import android.os.Build.VERSION.SDK_INT
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +24,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import com.example.whatsappclonejetpackfirebase.R
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
 import com.google.firebase.auth.FirebaseUser
@@ -44,25 +47,54 @@ fun AddProfile(
 
     val authUser = remember { mutableStateOf<FirebaseUser?>(null) }
     val username = addProfileViewModel.username.value
+    var screenRoutes = addProfileViewModel.screenRoutes.value
     var isCameraSelected = addProfileViewModel.isCameraSelected.value
     var cameraImageBitmap = addProfileViewModel.cameraImageBitmap.value
-    var galleryImageUri = addProfileViewModel.galleryImageUri.value
+    var galleryImageBitmap = addProfileViewModel.galleryImageBitmap.value
     var bottomSheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
     var lifecycleOwner = LocalLifecycleOwner.current
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) {
-                val currentUser = auth.currentUser
-                if (currentUser == null){
-                    navController.navigate(ScreenRoutes.SignUpScreen.route){
+    val imageLoader = ImageLoader.Builder(context).components() {
+            if (SDK_INT >= 28) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }.build()
+
+    fun checkAuthUser(){
+        val currentUser = auth.currentUser
+        if (currentUser == null){
+            navController.navigate(ScreenRoutes.SignUpScreen.route){
+                popUpTo(ScreenRoutes.AddProfileScreen.route){
+                    inclusive = true
+                }
+            }
+        } else {
+            authUser.value = currentUser
+        }
+    }
+
+    LaunchedEffect(key1 = screenRoutes){
+        if (screenRoutes != null) {
+            when (screenRoutes ){
+                is ScreenRoutes.MainScreen -> {
+                    navController.navigate(ScreenRoutes.MainScreen.route){
                         popUpTo(ScreenRoutes.AddProfileScreen.route){
                             inclusive = true
                         }
                     }
-                } else {
-                    authUser.value = currentUser
                 }
+            }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                checkAuthUser()
+            } else if(event == Lifecycle.Event.ON_RESUME) {
+                checkAuthUser()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -81,7 +113,7 @@ fun AddProfile(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            if(galleryImageUri == null && cameraImageBitmap == null){
+            if(galleryImageBitmap == null && cameraImageBitmap == null){
                 Image(
                     painter = painterResource(id = R.drawable.ic_baseline_add_a_photo_24),
                     contentDescription = "add photo",
@@ -98,7 +130,7 @@ fun AddProfile(
                 )
             }
 
-            galleryImageUri?.let {
+            galleryImageBitmap?.let {
                 if(!isCameraSelected){
                     Image(
                         bitmap = it.asImageBitmap(),
@@ -151,10 +183,12 @@ fun AddProfile(
             Button(
                 onClick = {
                     if(
-                        (cameraImageBitmap != null || galleryImageUri != null) &&
-                        username.isNotEmpty() && authUser != null
+                        (cameraImageBitmap != null || galleryImageBitmap != null) &&
+                        username.isNotEmpty()
                     ){
-                        addProfileViewModel.uploadImage(authUser.value?.uid, context)
+                        authUser.value?.let {
+                            addProfileViewModel.uploadImage(it, context)
+                        }
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -172,8 +206,27 @@ fun AddProfile(
             isCameraSelected = isCameraSelected,
             onChangeCameraImageBitmap = addProfileViewModel::onChangeCameraImageBitmap,
             onIsSelectedCameraChange = addProfileViewModel::onChangeIsCameraSelected,
-            onChangeGalleryImageUri = addProfileViewModel::onChangeGalleryImageUri,
+            onChangeGalleryImageBitmap = addProfileViewModel::onChangeGalleryImageUri,
         )
+
+        Column(
+            modifier = Modifier.fillMaxSize().background(Color.Gray),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row(
+                modifier = Modifier.background(Color.White)
+                    .padding(vertical = 7.dp, horizontal = 13.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                AsyncImage(
+                    model = R.drawable.loading_gif,
+                    imageLoader = imageLoader,
+                    contentDescription = "loading",
+                    modifier = Modifier.size(55.dp)
+                )
+                Text(text = "Processing, Please wait...", modifier = Modifier.padding(start = 7.dp))
+            }
+        }
     } // End Box
 
 }

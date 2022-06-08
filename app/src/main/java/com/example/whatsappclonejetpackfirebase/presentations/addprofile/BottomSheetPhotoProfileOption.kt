@@ -42,7 +42,7 @@ fun BottomSheetPhotoProfileOption(
     modalBottomSheetState: ModalBottomSheetState,
     isCameraSelected: Boolean,
     onIsSelectedCameraChange: (Boolean) -> Unit,
-    onChangeGalleryImageUri: (Bitmap?) -> Unit,
+    onChangeGalleryImageBitmap: (Bitmap?) -> Unit,
     onChangeCameraImageBitmap: (Bitmap?) -> Unit,
 ){
     val coroutineScope = rememberCoroutineScope()
@@ -59,7 +59,7 @@ fun BottomSheetPhotoProfileOption(
                     ImageDecoder.decodeBitmap(source)
                 }
                 onChangeCameraImageBitmap(null)
-                onChangeGalleryImageUri(tempBitmap)
+                onChangeGalleryImageBitmap(tempBitmap)
             }
         }
     }
@@ -68,7 +68,7 @@ fun BottomSheetPhotoProfileOption(
         contract = ActivityResultContracts.TakePicturePreview()
     ){
         bitmap: Bitmap? ->
-            onChangeGalleryImageUri(null)
+            onChangeGalleryImageBitmap(null)
             onChangeCameraImageBitmap(bitmap)
     }
 

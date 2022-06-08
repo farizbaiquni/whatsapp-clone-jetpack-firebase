@@ -7,9 +7,12 @@ import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
+import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileSimpleModel
+import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.auth.ktx.userProfileChangeRequest
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,13 +23,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddProfileViewModel @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val db: FirebaseFirestore,
 ): ViewModel() {
 
+    val screenRoutes = mutableStateOf<ScreenRoutes?>(null)
     val username = mutableStateOf("")
     val cameraImageBitmap = mutableStateOf<Bitmap?>(null)
-    val galleryImageUri = mutableStateOf<Bitmap?>(null)
-    val galleryImageUriToBitmap = mutableStateOf<Bitmap?>(null)
+    val galleryImageBitmap = mutableStateOf<Bitmap?>(null)
     val isCameraSelected = mutableStateOf(false)
     val isLoading = mutableStateOf<Boolean>(false)
 
@@ -39,73 +43,85 @@ class AddProfileViewModel @Inject constructor(
     }
 
     fun onChangeGalleryImageUri(data: Bitmap?){
-        this.galleryImageUri.value = data
+        this.galleryImageBitmap.value = data
     }
 
     fun onChangeIsCameraSelected(data: Boolean){
         this.isCameraSelected.value = data
     }
 
-    fun uploadImage(paramIdUser: String?, context: Context){
+    fun uploadImage(currentUser: FirebaseUser, context: Context){
         viewModelScope.launch {
-            var idUser: String? = null
-            if (paramIdUser == null) {
-                val currentUser = auth.currentUser
-                if (currentUser != null) {
-                    idUser = currentUser.uid
+            Toast.makeText(context, "INSIDE UPLOAD IMAGE PROGRESS", Toast.LENGTH_SHORT).show()
+            try {
+                //Upload Image
+                val photoProfileRef = Firebase
+                    .storage
+                    .reference
+                    .child("photoProfile/${currentUser.uid}.jpg")
+
+                var bitmap: Bitmap? = null
+                if (galleryImageBitmap.value != null) {
+                    bitmap = galleryImageBitmap.value
+                } else if (cameraImageBitmap.value != null) {
+                    bitmap = cameraImageBitmap.value
                 }
-            } else {
-                idUser = paramIdUser
-            }
-            if (idUser != null) {
-                Toast.makeText(context, "INSIDE UPLOAD IMAGE PROGRESS", Toast.LENGTH_SHORT).show()
-                try {
-                    //Upload Image
-                    val photoProfileRef = Firebase
-                        .storage
-                        .reference
-                        .child("photoProfile/${idUser}.jpg")
 
-                    var bitmap: Bitmap? = null
-                    if (galleryImageUri.value != null) {
-                        bitmap = galleryImageUriToBitmap.value
-                    } else if (cameraImageBitmap.value != null) {
-                        bitmap = cameraImageBitmap.value
-                    }
+                bitmap?.let {
+                    val baos = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+                    val data = baos.toByteArray()
 
-                    bitmap?.let {
-                        val baos = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-                        val data = baos.toByteArray()
-
-                        var uploadTask = photoProfileRef.putBytes(data)
-                        uploadTask.continueWithTask { task ->
-                            if (!task.isSuccessful) {
-                                task.exception?.let {
-                                    throw it
-                                }
-                            }
-                            photoProfileRef.downloadUrl
-                        }.addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                val downloadUri = task.result
-                                updateUserPhotoProfile(context, downloadUri)
-                            } else {
-                                Toast.makeText(context, "Upload image failed", Toast.LENGTH_SHORT).show()
+                    var uploadTask = photoProfileRef.putBytes(data)
+                    uploadTask.continueWithTask { task ->
+                        if (!task.isSuccessful) {
+                            task.exception?.let {
+                                throw it
                             }
                         }
+                        photoProfileRef.downloadUrl
+                    }.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val downloadUri = task.result
+                            updateUserPhotoProfile(currentUser, context, downloadUri)
+                        } else {
+                            Toast.makeText(context, "Upload image failed", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                } catch (e: Exception){
-                    Toast.makeText(context, e.toString(), Toast.LENGTH_SHORT).show()
                 }
+            } catch (e: Exception){
+                Toast.makeText(context, e.toString(), Toast.LENGTH_SHORT).show()
             }
         }
     }// End uploadImage
 
 
-    fun updateUserPhotoProfile(context: Context, imageUri: Uri){
+    private fun updateUserPhotoProfile(currentUser: FirebaseUser, context: Context, imageUri: Uri){
         viewModelScope.launch {
             try {
+                val profileRef = db.collection("userProfile").document(currentUser.uid)
+                val simpleProfileRef = db.collection("userSimpleProfile").document(currentUser.uid)
+                val profile = UserProfileModel(
+                    idUser = currentUser.uid,
+                    phoneNumbers = currentUser.phoneNumber!!,
+                    photoUrl = imageUri.toString(),
+                    username = username.value,
+                    about = "Hey there! Iam using WhatsApp.",
+                )
+                val simpleProfile = UserProfileSimpleModel(
+                    idUser = currentUser.uid,
+                    username = username.value,
+                    photoUrl = imageUri.toString(),
+                )
+
+                db.runBatch { batch ->
+                    batch.set(profileRef,  profile)
+                    batch.set(simpleProfileRef, simpleProfile)
+                }.addOnSuccessListener {
+
+                }.addOnFailureListener {
+                    Toast.makeText(context, "Failed add profile: $it", Toast.LENGTH_SHORT).show()
+                }
 
             } catch (e: Exception){
                 Toast.makeText(context, e.toString(), Toast.LENGTH_SHORT).show()
