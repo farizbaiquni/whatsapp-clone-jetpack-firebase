@@ -1,7 +1,7 @@
 package com.example.whatsappclonejetpackfirebase.domain.repository
 
-import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
+import com.example.whatsappclonejetpackfirebase.network.states.GetUserByIdState
 
 interface UserProfileRepository {
-    suspend fun getUserProfile(id: String): UserProfileModel?
+    suspend fun getUserById(id: String, listener: GetUserByIdState)
 }

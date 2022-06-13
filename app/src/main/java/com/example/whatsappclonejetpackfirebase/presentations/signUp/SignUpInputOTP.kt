@@ -12,6 +12,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -45,6 +48,18 @@ fun SignUpOTP(
     verifyingProgress: Boolean,
     verifyOTPCode: () -> Unit,
 ){
+
+    val backgroundColor = remember {
+        mutableStateOf(Color.LightGray)
+    }
+
+    LaunchedEffect(key1 = otpCodeTimerLeft, block = {
+        if (otpCodeTimerLeft <= 0) {
+            backgroundColor.value = Color.Transparent
+        } else {
+            backgroundColor.value = Color.LightGray
+        }
+    } )
 
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
@@ -136,6 +151,9 @@ fun SignUpOTP(
                             }
                         }
                     )
+                    .background(
+                        color = backgroundColor.value
+                    )
                     .clip(RoundedCornerShape(15f)),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -170,6 +188,9 @@ fun SignUpOTP(
                 modifier = Modifier
                     .padding(top = 7.5.dp)
                     .fillMaxWidth(0.90f)
+                    .background(
+                        color = backgroundColor.value
+                    )
                     .clip(RoundedCornerShape(15f)),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

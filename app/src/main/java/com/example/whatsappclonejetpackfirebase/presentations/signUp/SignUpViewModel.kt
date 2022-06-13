@@ -3,12 +3,16 @@ package com.example.whatsappclonejetpackfirebase.presentations.signUp
 import android.app.Activity
 import android.os.CountDownTimer
 import android.util.Log
+import androidx.compose.material.SnackbarDuration
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.whatsappclonejetpackfirebase.utils.SnackbarJobController
 import com.google.firebase.FirebaseException
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
@@ -27,9 +31,10 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
     val myActivity: MutableState<Activity> = mutableStateOf(activity)
     val myForceResendingToken: MutableState<PhoneAuthProvider.ForceResendingToken?> = mutableStateOf(null)
     val myVerificationId: MutableState<String?> = mutableStateOf(null)
-    val error: MutableState<Exception?> = mutableStateOf(null)
     val screenState: MutableState<SignUpState> = mutableStateOf(SignUpState.InputPhoneNumber)
     val verifyingProgress = mutableStateOf(false)
+    val snackbarHostState = mutableStateOf(SnackbarHostState())
+    val snackbarJobController = SnackbarJobController(viewModelScope)
 
     fun startSignUpWithPhoneNumbers(){
         val fullPhoneNumbers = "+62" + postfixPhoneNumbers.value
@@ -44,7 +49,6 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
                     .setActivity(myActivity.value)
                     .setCallbacks(callbacks)
                     .build()
-
                 PhoneAuthProvider.verifyPhoneNumber(options)
             } catch (e: Exception){
                 Log.d("FAILED START", e.toString())
@@ -174,23 +178,26 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
         }
 
         override fun onVerificationFailed(e: FirebaseException) {
-            // This callback is invoked in an invalid request for verification is made,
-            // for instance if the the phone number format is not valid.
+            when (e) {
+                is FirebaseNetworkException -> {
+                    snackbarJobController.showSnackbar(
+                        snackbarHostState = snackbarHostState.value,
+                        message = "No internet connection...",
+                        actionLabel = "Dismiss"
+                    )
+                }
 
-            if (e is FirebaseAuthInvalidCredentialsException) {
-                // Invalid request
-                error.value = e
-                Log.d("FAILED INVALID REQUEST", e.toString())
-            } else if (e is FirebaseTooManyRequestsException) {
-                // The SMS quota for the project has been exceeded
-                error.value = e
-                Log.d("FAILED QOUTA EXCEEDED", e.toString())
+                else -> {
+                    snackbarJobController.showSnackbar(
+                        snackbarHostState = snackbarHostState.value,
+                        message = e.message.toString().substring(0, 15) + "...",
+                        actionLabel = "Dismiss"
+                    )
+                }
+
             }
 
-            Log.d("VERIFICATION FAILED", e.toString())
             verifyingProgress.value = false
-
-            // Show a message and update the UI
         }
 
         override fun onCodeSent(

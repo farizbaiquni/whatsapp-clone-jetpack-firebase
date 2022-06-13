@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.whatsappclonejetpackfirebase.presentations.retry.Retry
 import com.example.whatsappclonejetpackfirebase.presentations.utils.AppViewModel
 import com.example.whatsappclonejetpackfirebase.presentations.utils.SplashViewModel
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
@@ -21,6 +22,9 @@ fun Splash(
 ){
     val splashViewModel: SplashViewModel = hiltViewModel()
     val screenRoutes = splashViewModel.screenRoutes.value
+    val error = splashViewModel.error.value
+    val errorMessage = splashViewModel.errorMessage.value
+    val errorAction = splashViewModel::checkAuthAndDataUser
 
     if (screenRoutes != null) {
         when (screenRoutes) {
@@ -44,11 +48,18 @@ fun Splash(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Text(text = "SPLASH SCREEN")
+
+    if (error) {
+        Retry(errorAction = errorAction)
+    } else {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(text = "SPLASH SCREEN")
+        }
     }
+
+
 }

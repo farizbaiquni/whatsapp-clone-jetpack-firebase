@@ -2,6 +2,7 @@ package com.example.whatsappclonejetpackfirebase.presentations.signUp
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ fun SignUp(
     val otpCode = signUpViewModel.otpCode.value
     val otpCodeTimerLeft = signUpViewModel.otpCodeTimerLeft.value
     val verifyingProgress = signUpViewModel.verifyingProgress.value
+    val snackbarHostState = signUpViewModel.snackbarHostState.value
 
     Column(
         modifier = Modifier
@@ -28,13 +30,14 @@ fun SignUp(
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
 
-        when(screenState){
+        when(screenState) {
             is SignUpState.InputPhoneNumber -> {
                 SignUpInputPhoneNumbers(
                     postfixPhoneNumbers = postfixPhoneNumbers,
                     prefixPhoneNumbers = prefixPhoneNumbers,
                     onChangePostfixPhoneNumbers = signUpViewModel::onChangePostfixPhoneNumbers,
                     startSignUpWithPhoneNumbers = signUpViewModel::startSignUpWithPhoneNumbers,
+                    snackbarHostState = snackbarHostState,
                 )
             }
 
@@ -50,7 +53,6 @@ fun SignUp(
                     verifyOTPCode = signUpViewModel::verifyOTPCode,
                 )
             }
-
             is SignUpState.ToAddProfileScreen -> {
                 navController.navigate(ScreenRoutes.AddProfileScreen.route){
                     popUpTo(ScreenRoutes.SignUpScreen.route){
@@ -66,11 +68,20 @@ fun SignUp(
                     }
                 }
             }
+            else -> {
+                SignUpInputPhoneNumbers(
+                    postfixPhoneNumbers = postfixPhoneNumbers,
+                    prefixPhoneNumbers = prefixPhoneNumbers,
+                    onChangePostfixPhoneNumbers = signUpViewModel::onChangePostfixPhoneNumbers,
+                    startSignUpWithPhoneNumbers = signUpViewModel::startSignUpWithPhoneNumbers,
+                    snackbarHostState = snackbarHostState,
+                )
+            }
+        } // end when statement
+    } // end column
+} // end fun compose
 
-        }
 
-    }
-}
 
 //@Preview(showBackground = true)
 //@Composable
