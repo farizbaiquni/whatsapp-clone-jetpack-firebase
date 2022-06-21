@@ -1,5 +1,6 @@
 package com.example.whatsappclonejetpackfirebase.utils
 
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -21,7 +22,7 @@ import kotlinx.coroutines.runBlocking
 @ExperimentalPermissionsApi
 @Composable
 fun Navigations (
-    signUpViewModel: SignUpViewModel,
+    activity: ComponentActivity
 ){
     val navController = rememberNavController()
     val appViewModel: AppViewModel = hiltViewModel()
@@ -39,7 +40,7 @@ fun Navigations (
         composable(
             route = ScreenRoutes.SignUpScreen.route
         ){
-            SignUp(signUpViewModel, navController)
+            SignUp(navController = navController, activity = activity)
         }
 
         composable(
@@ -51,13 +52,13 @@ fun Navigations (
         composable(
             route = ScreenRoutes.MainScreen.route
         ){
-            Main(navController, appViewModel)
+            Main(navController = navController, appViewModel)
         }
 
         composable(
             route = ScreenRoutes.ContactsScreen.route
         ){
-            Contacts(navController, appViewModel)
+            Contacts(navController = navController, appViewModel)
         }
 
     }

@@ -3,6 +3,7 @@ package com.example.whatsappclonejetpackfirebase
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.rememberScaffoldState
 import androidx.lifecycle.ViewModelProvider
 import com.example.whatsappclonejetpackfirebase.domain.repository.UserProfileRepository
 import com.example.whatsappclonejetpackfirebase.presentations.signUp.SignUpViewModel
@@ -21,14 +22,8 @@ import javax.inject.Inject
 @ExperimentalPermissionsApi
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var signUpViewModelFactory: SignUpViewModelFactory
-    private lateinit var signUpViewModel: SignUpViewModel
-    @Inject lateinit var db: FirebaseFirestore
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        signUpViewModelFactory = SignUpViewModelFactory(this, db)
-        signUpViewModel = ViewModelProvider(this, signUpViewModelFactory).get(SignUpViewModel::class.java)
     }
 
     override fun onStart() {
@@ -36,7 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WhatsappCloneJetpackFirebaseTheme {
                 Navigations(
-                    signUpViewModel = signUpViewModel,
+                    this,
                 )
             }
         }// End setContent

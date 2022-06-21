@@ -3,6 +3,7 @@ package com.example.whatsappclonejetpackfirebase.presentations.signUp
 import android.app.Activity
 import android.os.CountDownTimer
 import android.util.Log
+import androidx.compose.material.ScaffoldState
 import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.MutableState
@@ -20,10 +21,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+import java.lang.NullPointerException
 import java.util.concurrent.TimeUnit
 
 
-class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): ViewModel() {
+class SignUpViewModel(activity: Activity, scaffoldState: ScaffoldState): ViewModel() {
+    val db = FirebaseFirestore.getInstance()
     val prefixPhoneNumbers = mutableStateOf("+62")
     val postfixPhoneNumbers = mutableStateOf("")
     val otpCodeTimerLeft = mutableStateOf<Long>(65)
@@ -33,7 +36,7 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
     val myVerificationId: MutableState<String?> = mutableStateOf(null)
     val screenState: MutableState<SignUpState> = mutableStateOf(SignUpState.InputPhoneNumber)
     val verifyingProgress = mutableStateOf(false)
-    val snackbarHostState = mutableStateOf(SnackbarHostState())
+    val snackbarHostState = mutableStateOf(scaffoldState.snackbarHostState)
     val snackbarJobController = SnackbarJobController(viewModelScope)
 
     fun startSignUpWithPhoneNumbers(){
@@ -59,10 +62,13 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
 
     fun verifyOTPCode(){
         try {
-            Log.d("VERIFY OTP CODE", otpCode.value)
+            verifyingProgress.value = true
             val credential = PhoneAuthProvider.getCredential(myVerificationId.value!!, otpCode.value)
             signInWithPhoneNumber(credential)
-        } catch (e: Exception){ }
+        } catch (e: Exception){
+            verifyingProgress.value = false
+            screenState.value = SignUpState.InputPhoneNumber
+        }
     }
 
 
@@ -94,12 +100,17 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
                         this.verifyingProgress.value = false
                         this.screenState.value = SignUpState.InputPhoneNumber
                     }
-                } else {
-                    // Sign in failed, display a message and update the UI
-                    verifyingProgress.value = false
-                    this.screenState.value = SignUpState.InputPhoneNumber
                 }
-        }
+        }.addOnFailureListener { e ->
+                run {
+                    verifyingProgress.value = false
+                    snackbarJobController.showSnackbar(
+                        snackbarHostState = snackbarHostState.value,
+                        message = e.message.toString(),
+                        actionLabel = "Dismiss"
+                    )
+                }
+            }
     } // End signInWithPhoneNumber
 
 
@@ -167,12 +178,6 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
 
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
             Log.d("VERIFY COMPLETE", "verificationId: ")
-            // This callback will be invoked in two situations:
-            // 1 - Instant verification. In some cases the phone number can be instantly
-            //     verified without needing to send or enter a verification code.
-            // 2 - Auto-retrieval. On some devices Google Play services can automatically
-            //     detect the incoming verification SMS and perform verification without
-            //     user action.
             verifyingProgress.value = true
             signInWithPhoneNumber(credential = credential)
         }
@@ -204,11 +209,6 @@ class SignUpViewModel(activity: Activity, private val db: FirebaseFirestore): Vi
             verificationId: String,
             forceResendingToken: PhoneAuthProvider.ForceResendingToken
         ) {
-            // The SMS verification code has been sent to the provided phone number, we
-            // now need to ask the user to enter the code and then construct a credential
-            // by combining the code with a verification ID.
-
-            // Save verification ID and resending token so we can use them later
             myVerificationId.value = verificationId
             myForceResendingToken.value = forceResendingToken
 

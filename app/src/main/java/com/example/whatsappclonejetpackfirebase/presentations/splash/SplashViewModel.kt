@@ -1,4 +1,4 @@
-package com.example.whatsappclonejetpackfirebase.presentations.utils
+package com.example.whatsappclonejetpackfirebase.presentations.splash
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,7 @@ class SplashViewModel @Inject constructor(
     val screenRoutes = mutableStateOf<ScreenRoutes?>(null)
     val error = mutableStateOf<Boolean>(false)
     val errorMessage = mutableStateOf<String>("")
-
+    val loading = mutableStateOf<Boolean>(false)
 
     init {
         checkAuthAndDataUser()
@@ -41,15 +41,18 @@ class SplashViewModel @Inject constructor(
             userProfileRepository.getUserById(currentUser.uid, object: GetUserByIdState {
                 override fun onSuccess(data: Triple<Boolean, String, UserProfileModel?>) {
                     screenRoutes.value = ScreenRoutes.MainScreen
+                    loading.value = false
                 }
 
                 override fun onNoData(data: Triple<Boolean, String, UserProfileModel?>) {
                     screenRoutes.value = ScreenRoutes.AddProfileScreen
+                    loading.value = false
                 }
 
                 override fun onError(databaseError: Triple<Boolean, String, UserProfileModel?>) {
                     errorMessage.value = databaseError.second
                     error.value = databaseError.first
+                    loading.value = false
                 }
             })
 
@@ -58,11 +61,13 @@ class SplashViewModel @Inject constructor(
 
     fun checkAuthAndDataUser(){
         viewModelScope.launch {
+            loading.value = true
             val currentUser = checkAuthenticationUser()
             if (currentUser != null) {
                 checkDataUser(currentUser)
             } else {
                 screenRoutes.value = ScreenRoutes.SignUpScreen
+                loading.value = false
             }
         }
     }
