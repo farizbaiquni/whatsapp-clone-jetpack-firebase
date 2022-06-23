@@ -52,7 +52,6 @@ fun Splash(
         }
     }
 
-
     if (error) {
         Retry(errorAction = errorAction, errorMessage, loading = loading)
     } else {
@@ -64,6 +63,5 @@ fun Splash(
             Text(text = "SPLASH SCREEN")
         }
     }
-
 
 }

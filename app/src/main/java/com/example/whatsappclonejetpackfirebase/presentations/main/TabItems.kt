@@ -6,8 +6,8 @@ import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Statu
 import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Calls
 
 typealias ComposableFun = @Composable () -> Unit
-sealed class TabItems(var title: String, var screen: ComposableFun) {
-    object Chats: TabItems(title = "CHATS", { Chats() })
-    object Status: TabItems(title = "STATUS", { Status() })
-    object Calls: TabItems(title = "CALLS", { Calls() })
+sealed class TabItems(var title: String) {
+    object Chats: TabItems(title = "CHATS")
+    object Status: TabItems(title = "STATUS")
+    object Calls: TabItems(title = "CALLS")
 }

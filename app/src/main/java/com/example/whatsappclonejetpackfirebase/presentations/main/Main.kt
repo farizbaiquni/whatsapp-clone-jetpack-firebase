@@ -26,37 +26,30 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.whatsappclonejetpackfirebase.R
-import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
-import com.example.whatsappclonejetpackfirebase.presentations.utils.AppViewModel
+import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Calls
+import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Chats
+import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Status
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
 import com.google.accompanist.pager.*
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 
 @ExperimentalPermissionsApi
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun Main(navController: NavController, appViewModel: AppViewModel){
+fun Main(navController: NavController){
 
-    val auth = Firebase.auth
-    val mainViewModel: MainViewModel =  hiltViewModel()
+    val auth = FirebaseAuth.getInstance()
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val scope = rememberCoroutineScope()
     val tabIndex = mainViewModel.tabIndex.value
-
-    val userProfile: UserProfileModel? = appViewModel.userProfile.value
-
     val lifecycleOwner = LocalLifecycleOwner.current
-    val displayContactsPermissionAlert = remember { mutableStateOf(false) }
-    val tabs = listOf(
-        TabItems.Chats,
-        TabItems.Status,
-        TabItems.Calls,
-    )
     val pagerState = rememberPagerState()
-
+    val displayContactsPermissionAlert = remember { mutableStateOf(false) }
+    val tabs = listOf( TabItems.Chats, TabItems.Status, TabItems.Calls)
 
     val contactPermissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -65,34 +58,26 @@ fun Main(navController: NavController, appViewModel: AppViewModel){
         )
     )
 
-//    DisposableEffect(lifecycleOwner) {
-//        val observer = LifecycleEventObserver { _, event ->
-//            if (event == Lifecycle.Event.ON_START) {
-//
-//                val currentUser = auth.currentUser
-//                if(currentUser != null){
-//                    //Create user doc listener
-//                    appViewModel.userListener(currentUser.uid)
-//
-//                    //Query contacts phone data
-//                    if(contactPermissionsState.allPermissionsGranted){
-//                        appViewModel.queryContacts()
-//                    }
-//                }else{
-//                    navController.navigate(ScreenRoutes.SignUpScreen.route){
-//                        popUpTo(ScreenRoutes.SignUpScreen.route){
-//                            inclusive = true
-//                        }
-//                    }
-//                }
-//
-//            }
-//        }
-//        lifecycleOwner.lifecycle.addObserver(observer)
-//        onDispose {
-//            lifecycleOwner.lifecycle.removeObserver(observer)
-//        }
-//    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START && event == Lifecycle.Event.ON_RESUME) {
+                scope.launch {
+                    val currentUser = auth.currentUser
+                    if(currentUser == null){
+                        navController.navigate(ScreenRoutes.SignUpScreen.route){
+                            popUpTo(ScreenRoutes.SignUpScreen.route){
+                                inclusive = true
+                            }
+                        }
+                    }
+                }
+            }// End if event
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
 
     Scaffold(
@@ -101,13 +86,12 @@ fun Main(navController: NavController, appViewModel: AppViewModel){
             if(tabIndex == 0){
                 FloatingActionButton(
                     onClick = {
-                        if(!contactPermissionsState.allPermissionsGranted){
+                        if(!contactPermissionsState.allPermissionsGranted) {
                             displayContactsPermissionAlert.value = true
-                        }else{
+                        } else {
                             navController.navigate(ScreenRoutes.ContactsScreen.route)
                         }
                     }) {
-                    /* FAB content */
                     Icon(
                         painter =  painterResource(R.drawable.ic_baseline_message_24),
                         contentDescription = "message"
@@ -116,16 +100,17 @@ fun Main(navController: NavController, appViewModel: AppViewModel){
             }
         },
     ) {
+        Column(modifier = Modifier.padding(it)) {
+            ContactPermissionAlertDialog(
+                displayContactsPermissionAlert.value,
+                onChangeDisplayContactPermissionAlert = { displayContactsPermissionAlert.value = it },
+                LocalContext.current,
+            )
 
-        ContactPermissionAlertDialog(
-            displayContactsPermissionAlert.value,
-            onChangeDisplayContactPermissionAlert = { displayContactsPermissionAlert.value = it },
-            LocalContext.current,
-        )
-
-        Column {
-            Tabs(tabs = tabs, pagerState = pagerState, mainViewModel::onChangeTabIndex)
-            TabsContent(tabs = tabs, pagerState = pagerState)
+            Column {
+                Tabs(tabs = tabs, pagerState = pagerState, mainViewModel::onChangeTabIndex)
+                TabsContent(tabs = tabs, pagerState = pagerState)
+            }
         }
     }
 
@@ -140,12 +125,12 @@ fun ContactPermissionAlertDialog(
     onChangeDisplayContactPermissionAlert: (Boolean) -> Unit,
     context: Context,
 ){
-
     if(displayContactPermissionAlert){
         Dialog(
             onDismissRequest = { onChangeDisplayContactPermissionAlert(false) }
         ) {
             Surface(
+                modifier = Modifier.padding(horizontal = 10.dp),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Column(
@@ -198,7 +183,7 @@ fun ContactPermissionAlertDialog(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 15.sp,
                                 modifier = Modifier
-                                    .padding(end = 15.dp)
+                                    .padding(end = 25.dp)
                                     .clickable(enabled = true, onClick = {
                                         context.startActivity(Intent().apply {
                                             action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
@@ -209,13 +194,12 @@ fun ContactPermissionAlertDialog(
                                     })
                             )
                         }
-
                     }
                 }
             }// End surface
         }// End dialog
-    }
-}
+    }// End if
+}// End composable fun
 
 
 
@@ -257,7 +241,11 @@ fun Tabs(tabs: List<TabItems>, pagerState: PagerState, onChangeTabIndex: (Int) -
 @Composable
 fun TabsContent(tabs: List<TabItems>, pagerState: PagerState) {
     HorizontalPager(state = pagerState, count = tabs.size) { page ->
-        tabs[page].screen()
+        when (page) {
+            0 -> Chats()
+            1 -> Status()
+            2 -> Calls()
+        }
     }
 }
 

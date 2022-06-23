@@ -1,6 +1,7 @@
 package com.example.whatsappclonejetpackfirebase.presentations.utils
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,13 +21,13 @@ class AppViewModel @Inject constructor(
     private val contactRepository: ContactRepository
 ): ViewModel(){
 
-    var userProfileListener: ListenerRegistration? = null
+    var userProfileListener = mutableStateOf<ListenerRegistration?>(null)
     val userProfile: MutableState<UserProfileModel?> = mutableStateOf(null)
-    val contacts: MutableState<ArrayList<ContactModel>> = mutableStateOf(arrayListOf())
+    val contacts = mutableStateListOf<ArrayList<ContactModel>>(arrayListOf())
 
     suspend fun queryContacts(){
         viewModelScope.launch {
-            contacts.value.addAll(contactRepository.readContacts())
+            contacts.addAll(listOf(contactRepository.readContacts()))
         }
     }// queryContacts
 
@@ -34,7 +35,7 @@ class AppViewModel @Inject constructor(
         removeListenerUserProfile()
         var userProfileResult: UserProfileModel? = null
         val userRef = db.collection("users").document(idUser)
-        userProfileListener = userRef.addSnapshotListener { snapshot, e ->
+        userProfileListener.value = userRef.addSnapshotListener { snapshot, e ->
             if (e != null) {
                 return@addSnapshotListener
             }
@@ -53,7 +54,7 @@ class AppViewModel @Inject constructor(
     } // end userListener
 
     suspend fun removeListenerUserProfile () {
-        userProfileListener?.remove()
+        userProfileListener.value?.remove()
     }
 
 }
