@@ -1,5 +1,6 @@
 package com.example.whatsappclonejetpackfirebase.presentations.main
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -40,6 +41,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
+
     suspend fun fetchUser(){
         initialLoading.value = true
         removeListenerUserProfile()
@@ -52,6 +54,7 @@ class MainViewModel @Inject constructor(
             initialLoading.value = false
         }
     } // end userListener
+
 
     fun listeningUserProfile(authUser: FirebaseUser){
         var userProfileResult: UserProfileModel? = null
@@ -81,6 +84,7 @@ class MainViewModel @Inject constructor(
     fun removeListenerUserProfile () {
         userProfileListener.value?.remove()
     }
+
 
     fun onChangeTabIndex(index: Int){
         this.tabIndex.value = index

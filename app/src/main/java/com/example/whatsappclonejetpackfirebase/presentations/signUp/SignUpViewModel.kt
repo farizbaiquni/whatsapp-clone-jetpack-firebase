@@ -195,7 +195,7 @@ class SignUpViewModel(activity: Activity, scaffoldState: ScaffoldState): ViewMod
                 else -> {
                     snackbarJobController.showSnackbar(
                         snackbarHostState = snackbarHostState.value,
-                        message = e.message.toString().substring(0, 15) + "...",
+                        message = e.message.toString().substring(0, 35) + "...",
                         actionLabel = "Dismiss"
                     )
                 }

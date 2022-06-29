@@ -36,10 +36,11 @@ fun SignUp(
         snackbarHost = {
             scaffoldState.snackbarHostState
         }
-    ) {
+    ) { it ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(it)
                 .padding(vertical = 30.dp, horizontal = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,

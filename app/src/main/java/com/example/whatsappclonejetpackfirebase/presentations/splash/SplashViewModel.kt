@@ -31,7 +31,7 @@ class SplashViewModel @Inject constructor(
         checkAuthAndDataUser()
     }
 
-    suspend fun checkAuthenticationUser(): FirebaseUser?{
+    fun checkAuthenticationUser(): FirebaseUser?{
         var currentUser: FirebaseUser? = auth.currentUser
         return currentUser
     }
@@ -41,12 +41,10 @@ class SplashViewModel @Inject constructor(
             userProfileRepository.getUserById(currentUser.uid, object: GetUserByIdState {
                 override fun onSuccess(data: Triple<Boolean, String, UserProfileModel?>) {
                     screenRoutes.value = ScreenRoutes.MainScreen
-                    loading.value = false
                 }
 
                 override fun onNoData(data: Triple<Boolean, String, UserProfileModel?>) {
                     screenRoutes.value = ScreenRoutes.AddProfileScreen
-                    loading.value = false
                 }
 
                 override fun onError(databaseError: Triple<Boolean, String, UserProfileModel?>) {

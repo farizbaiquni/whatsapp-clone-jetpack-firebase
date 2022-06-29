@@ -1,16 +1,18 @@
 package com.example.whatsappclonejetpackfirebase.presentations.addprofile
 
 import android.os.Build.VERSION.SDK_INT
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -18,30 +20,44 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import com.example.whatsappclonejetpackfirebase.R
+import com.example.whatsappclonejetpackfirebase.presentations.components.SnackbarComponent
 import com.example.whatsappclonejetpackfirebase.utils.ScreenRoutes
+import com.example.whatsappclonejetpackfirebase.utils.SnackbarJobController
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 
+@ExperimentalComposeUiApi
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AddProfile(
-    navController: NavHostController,
+    navHostController: NavHostController,
 ){
-    val addProfileViewModel: AddProfileViewModel = hiltViewModel()
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
+    val scaffoldState = rememberScaffoldState()
+    val snackbarJobController = SnackbarJobController(scope)
+    val addProfileViewModel: AddProfileViewModel = viewModel(
+        factory = AddProfileViewModelFactory(
+            scaffoldState = scaffoldState,
+            snackbarJobController = snackbarJobController,
+            navHostController = navHostController,
+        )
+    )
+
     val context = LocalContext.current
     val auth = Firebase.auth
 
@@ -55,6 +71,8 @@ fun AddProfile(
     var lifecycleOwner = LocalLifecycleOwner.current
     val isLoading = addProfileViewModel.isLoading.value
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val imageLoader = ImageLoader.Builder(context).components() {
         if (SDK_INT >= 28) {
             add(ImageDecoderDecoder.Factory())
@@ -66,7 +84,7 @@ fun AddProfile(
     fun checkAuthUser(){
         val currentUser = auth.currentUser
         if (currentUser == null){
-            navController.navigate(ScreenRoutes.SignUpScreen.route){
+            navHostController.navigate(ScreenRoutes.SignUpScreen.route){
                 popUpTo(ScreenRoutes.AddProfileScreen.route){
                     inclusive = true
                 }
@@ -80,7 +98,7 @@ fun AddProfile(
         if (screenRoutes != null) {
             when (screenRoutes ){
                 is ScreenRoutes.MainScreen -> {
-                    navController.navigate(ScreenRoutes.MainScreen.route){
+                    navHostController.navigate(ScreenRoutes.MainScreen.route){
                         popUpTo(ScreenRoutes.AddProfileScreen.route){
                             inclusive = true
                         }
@@ -104,10 +122,13 @@ fun AddProfile(
         }
     }
     
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        if(!isLoading) {
+    Scaffold() { it ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it)
+        ) {
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -125,7 +146,7 @@ fun AddProfile(
                             .background(Color.LightGray.copy(alpha = 0.3f))
                             .padding(20.dp)
                             .clickable {
-                                coroutineScope.launch {
+                                scope.launch {
                                     bottomSheetState.show()
                                 }
                             }
@@ -143,7 +164,7 @@ fun AddProfile(
                                 .clip(CircleShape)
                                 .background(Color.LightGray.copy(alpha = 0.3f))
                                 .clickable {
-                                    coroutineScope.launch {
+                                    scope.launch {
                                         bottomSheetState.show()
                                     }
                                 }
@@ -161,7 +182,7 @@ fun AddProfile(
                             .clip(CircleShape)
                             .background(Color.LightGray.copy(alpha = 0.3f))
                             .clickable {
-                                coroutineScope.launch {
+                                scope.launch {
                                     bottomSheetState.show()
                                 }
                             }
@@ -170,7 +191,11 @@ fun AddProfile(
 
                 TextField(
                     value = username,
-                    onValueChange = {addProfileViewModel.onChangeUsername(it)},
+                    onValueChange = {
+                        if(it.length <= 25) {
+                            addProfileViewModel.onChangeUsername(it)
+                        }
+                    },
                     maxLines = 1,
                     colors = TextFieldDefaults.textFieldColors(
                         focusedIndicatorColor = MaterialTheme.colors.primary,
@@ -179,17 +204,28 @@ fun AddProfile(
                         backgroundColor = Color.Transparent,
                     ),
                     placeholder = { Text(text = "Type your name here")},
-                    modifier = Modifier.padding(top = 25.dp)
+                    modifier = Modifier.padding(top = 25.dp, start = 10.dp, end = 10.dp),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            keyboardController?.hide()
+                        }
+                    ),
                 )
 
                 Button(
                     onClick = {
-                        if(
-                            (cameraImageBitmap != null || galleryImageBitmap != null) &&
-                            username.isNotEmpty()
-                        ){
-                            authUser.value?.let {
+                        authUser.value?.let {
+                            if(username.length >= 4) {
                                 addProfileViewModel.uploadImage(it, context)
+                            } else {
+                                snackbarJobController.showSnackbar(
+                                    snackbarHostState = scaffoldState.snackbarHostState,
+                                    message = "Username must be at least 4 characters in length",
+                                    actionLabel = "Dismiss"
+                                )
                             }
                         }
                     },
@@ -210,28 +246,44 @@ fun AddProfile(
                 onIsSelectedCameraChange = addProfileViewModel::onChangeIsCameraSelected,
                 onChangeGalleryImageBitmap = addProfileViewModel::onChangeGalleryImageUri,
             )
-        }
 
-        Column(
-            modifier = Modifier.fillMaxSize().background(Color.Gray),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Row(
-                modifier = Modifier.background(Color.White)
-                    .padding(vertical = 7.dp, horizontal = 13.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = R.drawable.loading_gif,
-                    imageLoader = imageLoader,
-                    contentDescription = "loading",
-                    modifier = Modifier.size(55.dp)
-                )
-                Text(text = "Processing, Please wait...", modifier = Modifier.padding(start = 7.dp))
+            if(isLoading) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(0.6f)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Column(modifier = Modifier.clip(RoundedCornerShape(5.dp))) {
+                        Row(
+                            modifier = Modifier
+                                .background(Color.White)
+                                .padding(vertical = 9.dp, horizontal = 13.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AsyncImage(
+                                model = R.drawable.loading_gif,
+                                imageLoader = imageLoader,
+                                contentDescription = "loading",
+                                modifier = Modifier.size(45.dp)
+                            )
+                            Text(
+                                text = "Processing, Please wait...",
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+                        }
+                    }
+                }
             }
-        }
-    } // End Box
 
+            Column(modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp).padding(bottom = 10.dp)) {
+                SnackbarComponent(snackbarHostState = scaffoldState.snackbarHostState)
+            }
+
+        } // End Box
+
+    }
 }
 
 

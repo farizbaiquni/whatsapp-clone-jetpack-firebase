@@ -26,6 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.whatsappclonejetpackfirebase.R
+import com.example.whatsappclonejetpackfirebase.domain.model.UserProfileModel
 import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Calls
 import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Chats
 import com.example.whatsappclonejetpackfirebase.presentations.main.screens.Status
@@ -50,6 +51,9 @@ fun Main(navController: NavController){
     val pagerState = rememberPagerState()
     val displayContactsPermissionAlert = remember { mutableStateOf(false) }
     val tabs = listOf( TabItems.Chats, TabItems.Status, TabItems.Calls)
+
+    val initialLoading = mainViewModel.initialLoading.value
+    val userProfileModel = mainViewModel.userProfile.value
 
     val contactPermissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -108,13 +112,22 @@ fun Main(navController: NavController){
             )
 
             Column {
-                Tabs(tabs = tabs, pagerState = pagerState, mainViewModel::onChangeTabIndex)
-                TabsContent(tabs = tabs, pagerState = pagerState)
-            }
-        }
-    }
+                Tabs(
+                    tabs = tabs,
+                    pagerState = pagerState,
+                    mainViewModel::onChangeTabIndex
+                )
+                TabsContent(
+                    tabs = tabs,
+                    pagerState = pagerState,
+                    initialLoading = initialLoading,
+                    userProfileModel = userProfileModel,
+                )
+            }//End column
+        }// End column
+    }// End scaffold
 
-}// Main
+}//Main
 
 
 
@@ -239,12 +252,24 @@ fun Tabs(tabs: List<TabItems>, pagerState: PagerState, onChangeTabIndex: (Int) -
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun TabsContent(tabs: List<TabItems>, pagerState: PagerState) {
+fun TabsContent(
+    tabs: List<TabItems>,
+    pagerState: PagerState,
+    initialLoading: Boolean,
+    userProfileModel: UserProfileModel?
+) {
     HorizontalPager(state = pagerState, count = tabs.size) { page ->
         when (page) {
-            0 -> Chats()
-            1 -> Status()
-            2 -> Calls()
+            0 -> Chats(
+                initialLoading = initialLoading,
+                userProfileModel = userProfileModel
+                )
+            1 -> Status(
+                initialLoading = initialLoading
+                )
+            2 -> Calls(
+                initialLoading = initialLoading
+                )
         }
     }
 }
