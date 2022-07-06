@@ -219,6 +219,7 @@ fun AddProfile(
                     onClick = {
                         authUser.value?.let {
                             if(username.length >= 4) {
+                                keyboardController?.hide()
                                 addProfileViewModel.uploadImage(it, context)
                             } else {
                                 snackbarJobController.showSnackbar(
@@ -255,29 +256,32 @@ fun AddProfile(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Column(modifier = Modifier.clip(RoundedCornerShape(5.dp))) {
-                        Row(
-                            modifier = Modifier
-                                .background(Color.White)
-                                .padding(vertical = 9.dp, horizontal = 13.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = R.drawable.loading_gif,
-                                imageLoader = imageLoader,
-                                contentDescription = "loading",
-                                modifier = Modifier.size(45.dp)
-                            )
-                            Text(
-                                text = "Processing, Please wait...",
-                                modifier = Modifier.padding(start = 10.dp)
-                            )
-                        }
+                    Column(modifier = Modifier
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color.White)
+                        .padding(35.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        AsyncImage(
+                            model = R.drawable.loading_gif,
+                            imageLoader = imageLoader,
+                            contentDescription = "loading",
+                            modifier = Modifier.size(45.dp)
+                        )
+                        Text(
+                            text = "Please wait...",
+                            modifier = Modifier.padding(start = 10.dp, top = 10.dp)
+                        )
                     }
                 }
             }
 
-            Column(modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 10.dp).padding(bottom = 10.dp)) {
+            Column(modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 10.dp)
+                .padding(bottom = 10.dp)
+            ){
                 SnackbarComponent(snackbarHostState = scaffoldState.snackbarHostState)
             }
 

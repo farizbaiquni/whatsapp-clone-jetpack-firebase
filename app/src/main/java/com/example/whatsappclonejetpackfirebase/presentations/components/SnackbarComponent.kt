@@ -29,7 +29,7 @@ fun SnackbarComponent(
             elevation = 6.dp,
         ) {
             Text(
-                text = snackbarHostState.currentSnackbarData?.message?:"Hide",
+                text = snackbarHostState.currentSnackbarData?.message?:"Dismiss",
                 color = MaterialTheme.colors.onError
             )
 
