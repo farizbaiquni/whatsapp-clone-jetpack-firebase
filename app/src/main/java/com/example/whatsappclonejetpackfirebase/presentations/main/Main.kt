@@ -53,6 +53,9 @@ fun Main(navController: NavController){
     val tabs = listOf( TabItems.Chats, TabItems.Status, TabItems.Calls)
 
     val initialLoading = mainViewModel.initialLoading.value
+    val chatsLoading = mainViewModel.chatsLoading.value
+    val statusLoading = mainViewModel.statusLoading.value
+    val callsLoading = mainViewModel.callsLoading.value
     val userProfileModel = mainViewModel.userProfile.value
 
     val contactPermissionsState = rememberMultiplePermissionsState(
@@ -121,6 +124,9 @@ fun Main(navController: NavController){
                     tabs = tabs,
                     pagerState = pagerState,
                     initialLoading = initialLoading,
+                    chatsLoading = chatsLoading,
+                    statusLoading = statusLoading,
+                    callsLoading = callsLoading,
                     userProfileModel = userProfileModel,
                 )
             }//End column
@@ -256,13 +262,17 @@ fun TabsContent(
     tabs: List<TabItems>,
     pagerState: PagerState,
     initialLoading: Boolean,
+    chatsLoading:Boolean,
+    statusLoading:Boolean,
+    callsLoading:Boolean,
     userProfileModel: UserProfileModel?
 ) {
     HorizontalPager(state = pagerState, count = tabs.size) { page ->
         when (page) {
             0 -> Chats(
                 initialLoading = initialLoading,
-                userProfileModel = userProfileModel
+                chatsLoading = chatsLoading,
+                userProfileModel = userProfileModel,
                 )
             1 -> Status(
                 initialLoading = initialLoading

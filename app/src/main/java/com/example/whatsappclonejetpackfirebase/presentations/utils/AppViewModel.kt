@@ -27,7 +27,7 @@ class AppViewModel @Inject constructor(
 
     suspend fun queryContacts(){
         viewModelScope.launch {
-            contacts.addAll(listOf(contactRepository.readContacts()))
+
         }
     }// queryContacts
 

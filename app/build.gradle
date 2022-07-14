@@ -113,6 +113,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-pager:0.24.12-rc")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.24.11-rc")
 
+    //Shimmer
+    implementation("com.valentinilk.shimmer:compose-shimmer:1.0.3")
+
 }
 
 

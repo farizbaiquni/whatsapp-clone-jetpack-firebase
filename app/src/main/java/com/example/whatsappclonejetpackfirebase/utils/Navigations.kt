@@ -54,7 +54,7 @@ fun Navigations (
         composable(
             route = ScreenRoutes.ContactsScreen.route
         ){
-            Contacts(navController = navController, appViewModel)
+            Contacts(navController = navController)
         }
 
     }
